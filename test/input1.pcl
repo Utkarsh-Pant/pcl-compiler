@@ -1,0 +1,7 @@
+a==b
+a=b
+a<=b
+a<b
+a>=b
+a>b #We are in pcl mode now baby!!
+a!=b
