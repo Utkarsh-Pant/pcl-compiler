@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "stack.h"
 #include "lexer.h"
+#include "tree.h"
 
 #ifndef PARSER_H
 #define PARSER_H
@@ -11,13 +12,13 @@
 
 typedef enum{
 	PREC_ERR, // (=0)
-	PREC_UNARY, // Unary Operators
-	PREC_MULT, // Mulitplicative
-	PREC_ADD, // Additive
-	PREC_REL, // Relational
-	PREC_EQ, // Equality
-	PREC_ASS, // Assignment
-	PREC_COMMA // Comma
+	PREC_COMMA,
+	PREC_ASS,
+	PREC_EQ,
+	PREC_REL,
+	PREC_ADD,
+	PREC_MULT,
+	PREC_UNARY
 } PREC;
 
 typedef enum{
@@ -28,20 +29,8 @@ typedef enum{
 
 } NODE_TYPE;
 
-struct AST{
 
-	NODE_TYPE type;
-	union{
-		int i;
-		char c;
-		char* s;
-	} value;
-	size_t children_count;
-	struct AST* children;
-
-};
-
-void parse(struct Stream*, struct Stream*);
+int parse(struct Stream*, struct Stream*);
 
 
 #endif 

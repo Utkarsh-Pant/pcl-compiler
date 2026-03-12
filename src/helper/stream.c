@@ -66,6 +66,10 @@ void destroyStream(struct Stream* st){
 	
 }
 
+int isEmptyStream(struct Stream* st){
+	return st->length==0;
+}
+
 struct StreamIterator getIterator(struct Stream* st){
 	struct StreamIterator itr= {
 	.arr = st->stream + st->begin,

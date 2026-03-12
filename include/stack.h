@@ -20,4 +20,5 @@ struct Generic_Stack* createStack(void);
 void push(struct Generic_Stack* stack, void*);
 void* pop(struct Generic_Stack* stack);
 void* peek(struct Generic_Stack* stack);
+int isEmptyStack(struct Generic_Stack*);
 #endif

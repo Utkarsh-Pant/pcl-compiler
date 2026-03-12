@@ -34,6 +34,7 @@ void* peekStream(struct Stream*);
 void* advanceStream(struct Stream*);
 int compactStream(struct Stream*);
 void destroyStream(struct Stream*);
+int isEmptyStream(struct Stream*);
 
 struct StreamIterator getIterator(struct Stream*);
 #endif

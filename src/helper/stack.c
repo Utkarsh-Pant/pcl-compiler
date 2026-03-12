@@ -42,3 +42,7 @@ void* peek(struct Generic_Stack* stack){
 	if(stack->top == -1) return NULL;
 	return stack->arr[stack->top];
 }
+
+int isEmptyStack(struct Generic_Stack* stack){
+	return stack->top == -1;
+}

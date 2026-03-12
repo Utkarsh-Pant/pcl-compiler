@@ -13,6 +13,13 @@
  * Can change it to signal based like update token to basically allow for single edit token creation/removal.
  *
  * However, doing this means surrounding all operators with some sentinels like OP_START/OP_END, to check if they fit the broad category. 
+ *
+ * ******
+ * Have decided to switch to this method. Will change my lexer acc.
+ * Creating a global token map that maps directly to verbose types.
+ * Creating a get_category(...) function that maps them to broad types.
+ * Create a is_fast(...) function and area to declare fast-break tokens.
+ * ******
  * ---------------
  * [idea-int-radix]
  * One thing to be wondered about:
@@ -33,48 +40,13 @@
  * So for now OP_COMMA is handled poorly, planning to fix that soon.
  */
 
-void printToken(struct Token* tk){
-	
-	char* dispatchTable[TOKEN_TYPE_COUNT] = {NULL};
-
-	dispatchTable[IDENT] = "IDENT";
-	dispatchTable[OP_PLUS] = "OP_PLUS";
-	dispatchTable[OP_MINUS] = "OP_MINUS";
-	dispatchTable[OP_DIVIDE] = "OP_DIVIDE";
-	dispatchTable[OP_MULTIPLY] = "OP_MULTIPLY";
-	dispatchTable[OP_NOT] = "OP_NOT";
-
-	dispatchTable[OP_PLUS_PLUS] = "OP_PLUS_PLUS";
-	dispatchTable[OP_MINUS_MINUS] = "OP_MINUS_MINUS";
-	
-	dispatchTable[OP_PLUS_EQUALS] = "OP_PLUS_EQUALS";
-	dispatchTable[OP_MINUS_EQUALS] = "OP_MINUS_EQUALS";
-	dispatchTable[OP_DIVIDE_EQUALS] = "OP_DIVIDE_EQUALS";
-	dispatchTable[OP_MULTIPLY_EQUALS] = "OP_MULTIPLY_EQUALS";
-	dispatchTable[OP_EQUALS] = "OP_EQUALS";
-	dispatchTable[OP_NOT_EQUALS] = "OP_NOT_EQUALS";
-
-	dispatchTable[OP_EQUALS_EQUALS] = "OP_EQUALS_EQUALS";
-	dispatchTable[OP_LESSER_EQUALS] = "OP_LESSER_EQUALS";
-	dispatchTable[OP_GREATER_EQUALS] ="OP_GREATER_EQUALS";
-	dispatchTable[OP_LESSER] = "OP_LESSER";
-	dispatchTable[OP_GREATER] = "OP_GREATER";	
-	
-	dispatchTable[LITERAL_INT] = "LITERAL_INT";
-	dispatchTable[LITERAL_CHR] = "LITERAL_CHR";
-	dispatchTable[LITERAL_STR] = "LITERAL_STR";
-
-	dispatchTable[KWD] = "KWD";
-	dispatchTable[PUNC] = "PUNC";
-	printf("(%s)", dispatchTable[tk->type] == NULL ? "INVALID" : dispatchTable[tk->type]);
-}
 
 // Checks if a identifier can be promoted to a keyword.
 // Otherwise does nothing.
 static void chkPromote(struct Token* tk){
 	struct{
 		const char* name;
-		KEYWORD kwd;
+		TOKEN_TYPE kwd;
 	} dispatchTable[] =
 	{
 		{"if", KWD_IF},
@@ -95,9 +67,8 @@ static void chkPromote(struct Token* tk){
 			free(tk->value.s);
 			tk->value.s = NULL; // Freeing prev stored value and changing to keyword.
 
-			tk->type = KWD;
+			tk->type = dispatchTable[i].kwd;
 			tk->cap = 0;
-			tk->value.i = dispatchTable[i].kwd;
 			break;
 		}
 	}
@@ -193,9 +164,27 @@ static struct Token* createToken_LITERAL(char val){
 
 static struct Token* createToken_PUNC(char c){
 	struct Token* tk = malloc(sizeof(struct Token));
-	tk->type = PUNC;
-	tk->value.c = c;
-	
+	switch(c){
+		case '(': tk->type = PUNC_OPEN_PAR;
+			  break;
+		case ')': tk->type = PUNC_CLOSE_PAR;
+			  break;
+		case '[': tk->type = PUNC_OPEN_BRACKET;
+			  break;
+		case ']': tk->type = PUNC_CLOSE_BRACKET;
+			  break;
+		case '{': tk->type = PUNC_OPEN_BRACE;
+			  break;
+		case '}': tk->type = PUNC_CLOSE_BRACE;
+			  break;
+		case ',': tk->type = PUNC_COMMA;
+			  break;
+		case ';': tk->type = PUNC_SC;
+			  break;
+		default: free(tk);
+			 return NULL;
+
+	}	
 	return tk;
 }
 
@@ -441,6 +430,10 @@ static int updateToken(struct Token* tk, FILE* fptr, char val){
 	return dispatchTable[tk->type](tk,fptr,val);
 }
 
+int is_fast(TOKEN_TYPE type){
+	if(type>PUNC && type<TOKEN_TYPE_COUNT) return 1;
+	return 0;
+}
 
 
 /* ----------------
@@ -532,7 +525,7 @@ int lex(char filename[static 1], struct Stream* output){
 				perror("Lexer Error.");
 				return EXIT_FAILURE;
 			}
-			if (current_token && current_token->type == PUNC){
+			if (current_token && is_fast(current_token->type)){
 				appendStream(output, current_token);
 				current_token = NULL;
 			}	

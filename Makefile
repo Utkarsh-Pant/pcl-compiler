@@ -1,4 +1,4 @@
-FLAGS := -Iinclude
+FLAGS := -Iinclude -g
 FILES := $(wildcard src/*.c src/helper/*.c)
 INPUT := $(wildcard test/*.pcl)
 

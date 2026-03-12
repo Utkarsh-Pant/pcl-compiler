@@ -1,5 +1,7 @@
+#include <inttypes.h>
 #include "stream.h"
 #include "lexer.h"
+#include "fnv.h"
 #include "parser.h"
 /*
  * Inorder to use the parser debugger tool, output should be a bfs.
@@ -34,13 +36,20 @@ int main(int argc, char** argv){
 		}
 
 		lex(argv[i-1], tkStream);
-		parse(tkStream, treeStream);
 		
 		struct StreamIterator itr = getIterator(tkStream);
 		for(int i = 0; i< itr.n; i++){
 			printToken((struct Token*)itr.arr[i]);	
 		}
+		printf("\n");
+		parse(tkStream, treeStream);
 
+		printf("Parse output:\n");
+		itr = getIterator(treeStream);
+		for(int i = 0; i<itr.n; i++){
+			printAST((struct AST*)itr.arr[i]);
+		}
+		printf("\n");
 
 	}
 	return EXIT_SUCCESS;
