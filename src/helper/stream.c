@@ -43,6 +43,11 @@ void* peekStream(struct Stream* st){
 	else return st->stream[st->begin];
 }
 
+void* peekNextStream(struct Stream* st){
+	if(st->length<2) return NULL;
+	else return st->stream[st->begin];
+}
+
 void* advanceStream(struct Stream* st){
 	if(st->length==0)return NULL;
 	st->length--;

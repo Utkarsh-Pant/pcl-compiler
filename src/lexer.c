@@ -114,6 +114,9 @@ static struct Token* createToken_OP(char val){
 		case '-':
 			tk->type = OP_MINUS;
 			return tk;
+		case ',':
+			tk->type = OP_COMMA;
+			return tk;
 		case '/':
 			tk->type = OP_DIVIDE;
 			return tk;
@@ -176,8 +179,6 @@ static struct Token* createToken_PUNC(char c){
 		case '{': tk->type = PUNC_OPEN_BRACE;
 			  break;
 		case '}': tk->type = PUNC_CLOSE_BRACE;
-			  break;
-		case ',': tk->type = PUNC_COMMA;
 			  break;
 		case ';': tk->type = PUNC_SC;
 			  break;
@@ -421,6 +422,8 @@ static int updateToken(struct Token* tk, FILE* fptr, char val){
 		[OP_LESSER] = &updateToken_OP_LESSER,
 		[OP_GREATER] = &updateToken_OP_GREATER,
 		
+		[OP_COMMA] = &updateToken_TERMINAL,
+
 		[LITERAL_INT] = &updateToken_LITERAL_INT,
 		[LITERAL_CHR] = &updateToken_LITERAL_CHR,
 		[LITERAL_STR] = &updateToken_LITERAL_STR
@@ -470,6 +473,7 @@ int lex(char filename[static 1], struct Stream* output){
 	tk_map['<'] = OP;
 	tk_map['>'] = OP;
 	tk_map['!'] = OP;
+	tk_map[','] = OP;
 
 	// Initial characters for literals.
 	for(char c = '0'; c<= '9'; c++) tk_map[c] = LITERAL;
@@ -490,7 +494,6 @@ int lex(char filename[static 1], struct Stream* output){
 	tk_map[']'] = PUNC;
 	tk_map['{'] = PUNC;
 	tk_map['}'] = PUNC;
-	tk_map[','] = PUNC;
 	// -------------------------------------------------
 	
 	FILE* fptr = fopen(filename, "r");

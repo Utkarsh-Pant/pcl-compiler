@@ -26,6 +26,8 @@ void printToken(struct Token* tk){
         dispatchTable[OP_GREATER_EQUALS] ="OP_GREATER_EQUALS";
         dispatchTable[OP_LESSER] = "OP_LESSER";
         dispatchTable[OP_GREATER] = "OP_GREATER";
+	
+	dispatchTable[OP_COMMA] = "OP_COMMA";
 
         dispatchTable[LITERAL_INT] = "LITERAL_INT";
         dispatchTable[LITERAL_CHR] = "LITERAL_CHR";

@@ -8,7 +8,9 @@ static void printDFSsexy(struct AST* node, int count){
 	printf(">");
 	char* dispatchTable[TOKEN_TYPE_COUNT] = {NULL};
 
-        dispatchTable[IDENT] = "IDENT";
+	dispatchTable[BLOCK] = "BLOCK";
+
+	dispatchTable[IDENT] = "IDENT";
         dispatchTable[OP_PLUS] = "OP_PLUS";
         dispatchTable[OP_MINUS] = "OP_MINUS";
         dispatchTable[OP_DIVIDE] = "OP_DIVIDE";
@@ -49,7 +51,7 @@ static void printDFSsexy(struct AST* node, int count){
                 dispatchTable[i] = "PUNC_2C";
         }
         dispatchTable[PUNC] = "PUNC";
-        printf("NODE:%s\n", dispatchTable[node->type] == NULL ? "INVALID" : dispatchTable[node->type]);
+        printf("%s\n", dispatchTable[node->type] == NULL ? "INVALID" : dispatchTable[node->type]);
 
 	for(int i = 0; i< node->children_count; i++){
 		printDFSsexy(node->children[i], count+1);
@@ -67,11 +69,25 @@ void addChild(struct AST* parent, struct AST* child){
 	parent->children_count++;
 }
 
-struct AST* createAST(TOKEN_TYPE type){
+struct AST* createAST(struct Token* token){
 	struct AST* temp = malloc(sizeof(struct AST));
-	temp->type = type;
+	if (token == NULL){
+		temp->type = ERR;
+		temp->children_count = 0;
+		temp->children = NULL;
+		return temp;
+	}
+
+	temp->type = token->type;
 	temp->children_count = 0;
 	temp->children = NULL;
+	temp->val = token->value;
+
+	if( 
+		token->type == LITERAL_STR ||
+		token->type == IDENT
+	)
+		token->value.s = NULL;	
 
 	return temp;
 }

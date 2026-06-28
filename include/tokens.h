@@ -7,7 +7,8 @@
 typedef enum{
         ERR, // ERR ( = 0 )
         WS,
-        IDENT, // Identifier
+	BLOCK,
+	IDENT, // Identifier
         KWD, // Keyword (I have decided not to be verbose here.
              // I believe this decision should aid the parser slightly.
              // Update: 15/02/2026 I was wrong. Very wrong and doomb.
@@ -61,7 +62,6 @@ typedef enum{
         PUNC_CLOSE_BRACKET, // ]
         PUNC_OPEN_BRACE, // {
         PUNC_CLOSE_BRACE, // }
-        PUNC_COMMA, // ,
         PUNC_SC, // ;
 	PUNC_TERM_END,
 

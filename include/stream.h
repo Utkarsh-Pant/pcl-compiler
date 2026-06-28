@@ -31,10 +31,12 @@ struct StreamIterator{
 struct Stream* createStream(void);
 int appendStream(struct Stream*, void*);
 void* peekStream(struct Stream*);
+void* peekNextStream(struct Stream*);
 void* advanceStream(struct Stream*);
 int compactStream(struct Stream*);
 void destroyStream(struct Stream*);
 int isEmptyStream(struct Stream*);
+
 
 struct StreamIterator getIterator(struct Stream*);
 #endif

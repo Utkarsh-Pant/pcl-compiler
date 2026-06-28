@@ -15,7 +15,7 @@ struct AST{
 
 void printAST(struct AST*);
 void addChild(struct AST*, struct AST*);
-struct AST* createAST(TOKEN_TYPE);
+struct AST* createAST(struct Token*);
 
 
 #endif
