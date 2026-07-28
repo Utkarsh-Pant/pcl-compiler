@@ -1,0 +1,11 @@
+int x,y=5;
+if(x>5){
+	if(y)++u;
+	if(1)++x;
+	else --y;
+}
+for(int i = 0; i<n; ++i){
+	while(1){
+		--x;
+	}
+}

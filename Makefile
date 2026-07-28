@@ -1,4 +1,4 @@
-FLAGS := -Iinclude -g
+FLAGS := -Iinclude -g -Wpedantic -Wall
 FILES := $(wildcard src/*.c src/helper/*.c)
 INPUT := $(wildcard test/*.pcl)
 

@@ -1,0 +1,89 @@
+/**
+ * @file tokens.def
+ * @brief Token Definitions File
+ * @ingroup Core
+*/
+
+X(ERR, "Error")
+X(WS, "WS")
+X(BLOCK, "Block")
+X(FUNC, "Function")
+X(IDENT, "ID")
+X(KWD, "KWD-CATEGORY-MARKER") // Keyword (I have decided not to be verbose here.
+     // I believe this decision should aid the parser slightly.
+     // Update: 15/02/2026 I was wrong. Very wrong and doomb.
+X(KWD_IF, "if")
+X(KWD_ELSE, "else")
+X(KWD_INT, "int")
+X(KWD_CHR, "char")
+X(KWD_FOR, "for")
+X(KWD_WHILE, "while")
+X(KWD_BREAK, "break")
+X(KWD_CONTINUE, "continue")
+X(KWD_TERM_END, "KWD-END-MARKER")
+
+X(OP, "OP-CATEGORY-MARKER")
+X(OP_PLUS, "+")
+X(OP_MINUS, "-")
+X(OP_DIVIDE, "/")
+X(OP_MULTIPLY, "*")
+X(OP_MODULO, "%")
+
+X(OP_UN, "OP-UNARY-CATEGORY-MARKER")
+X(OP_NOT, "!")
+X(OP_UN_PLUS, "+(unary)")
+X(OP_UN_MINUS, "-(unary)")
+X(OP_PLUS_PLUS, "++")
+X(OP_MINUS_MINUS, "--")
+X(OP_PLUS_PLUS_POST, "++(post)")
+X(OP_MINUS_MINUS_POST, "--(post)")
+X(OP_UN_BITWISE_AND, "&")
+X(OP_UN_TERM_END, "OP-UNARY-END-MARKER")
+
+
+X(OP_PLUS_EQUALS, "+=")
+X(OP_MINUS_EQUALS, "-=")
+X(OP_DIVIDE_EQUALS, "/=")
+X(OP_MULTIPLY_EQUALS, "*=")
+X(OP_EQUALS, "=")
+
+X(OP_NOT_EQUALS, "!=")
+X(OP_EQUALS_EQUALS, "==")
+X(OP_LESSER_EQUALS, "<=")
+X(OP_GREATER_EQUALS, ">=")
+X(OP_LESSER, "<")
+X(OP_GREATER, ">")
+
+X(OP_AND, "&&")
+X(OP_OR, "||")
+X(OP_BITWISE_AND, "&")
+X(OP_BITWISE_OR, "|")
+X(OP_BITWISE_XOR, "^")
+X(OP_BITWISE_NOT, "~")
+X(OP_LSHIFT, "<<")
+X(OP_RSHIFT, ">>")
+X(OP_DOT, ".")
+X(OP_ARROW, "->")
+X(OP_COMMA, ",")
+
+X(OP_TERM_END, "OP-END-MARKER")
+
+X(LITERAL, "LITERAL-CATEGORY-MARKER")
+X(LITERAL_INT, "LIT_INT")
+X(LITERAL_CHR, "LIT_CHR")
+X(LITERAL_STR, "LIT_STR")
+X(LIT_TERM_END, "LITERAL-END-MARKER")
+
+X(PUNC, "PUNC-CATEGORY-MARKER")
+X(PUNC_OPEN_PAR, "(")
+X(PUNC_CLOSE_PAR, ")")
+X(PUNC_OPEN_BRACKET, "[")
+X(PUNC_CLOSE_BRACKET, "]")
+X(PUNC_OPEN_BRACE, "{")
+X(PUNC_CLOSE_BRACE, "}")
+X(PUNC_SC, ";")
+X(PUNC_TERM_END, "PUNC-END-MARKER")
+
+UN(OP_PLUS, OP_UN_PLUS)
+UN(OP_MINUS, OP_UN_MINUS)
+UN(OP_BITWISE_AND, OP_UN_BITWISE_AND)

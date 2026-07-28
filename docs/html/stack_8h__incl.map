@@ -1,0 +1,9 @@
+<map id="include/stack.h" name="include/stack.h">
+<area shape="rect" id="Node000001" title="Generic stack implementation." alt="" coords="72,5,192,31"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,79,72,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="119,33,66,72,63,68,115,29"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="97,79,167,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="135,31,135,65,129,65,129,31"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="192,79,275,104"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="150,28,207,68,204,73,147,33"/>
+</map>

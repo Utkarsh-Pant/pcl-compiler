@@ -7,7 +7,7 @@
 struct AST{
 
 	TOKEN_TYPE type;
-	union token_val val;
+	union token_val value;
 	size_t children_count;
 	struct AST** children;
 

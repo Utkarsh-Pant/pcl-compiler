@@ -8,32 +8,24 @@
  */
 
 static PREC precidence_table[TOKEN_TYPE_COUNT]={
-	[OP_PLUS_PLUS] = PREC_UNARY,
-	[OP_MINUS_MINUS] = PREC_UNARY,
-	[OP_NOT] = PREC_UNARY,
+	#define PREC(a)
+	#define MAP(tok, prec, ass) [tok] = prec,
+	#define ST(a)
+	#include "parser_mappings.def"
+	#undef PREC
+	#undef MAP
+	#undef ST	
+};
 
-	[OP_MULTIPLY] = PREC_MULT,
-	[OP_DIVIDE] = PREC_MULT,
-
-	[OP_PLUS] = PREC_ADD,
-	[OP_MINUS] = PREC_ADD,
-
-	[OP_LESSER] = PREC_REL,
-	[OP_GREATER] = PREC_REL,
-	[OP_LESSER_EQUALS] = PREC_REL,
-	[OP_GREATER_EQUALS] = PREC_REL,
-
-	[OP_NOT_EQUALS] = PREC_EQ,
-	[OP_EQUALS_EQUALS] = PREC_EQ,
-
-	[OP_PLUS_EQUALS] = PREC_ASS,
-	[OP_MINUS_EQUALS] = PREC_ASS,
-	[OP_DIVIDE_EQUALS] = PREC_ASS,
-	[OP_MULTIPLY_EQUALS] = PREC_ASS,
-	[OP_EQUALS] = PREC_ASS,
-
-	[OP_COMMA] = PREC_COMMA
-
+static ASS assoc_table[TOKEN_TYPE_COUNT] = {
+	
+	#define PREC(a)
+	#define MAP(tok, prec, ass) [tok] = ass,
+	#define ST(a)
+	#include "parser_mappings.def"
+	#undef PREC
+	#undef MAP
+	#undef ST	
 };
 
 static unsigned assignment_table[TOKEN_TYPE_COUNT]={
@@ -44,10 +36,11 @@ static unsigned assignment_table[TOKEN_TYPE_COUNT]={
 static int parse_expr(struct AST** out, struct Stream* in);
 static int parse_stmt(struct AST** out, struct Stream* in);
 static int parse_block(struct AST** out, struct Stream* in);
+static int parse_func_expr(struct AST** out, struct Stream* in);
 
 /* Consuming. Should only be used for strict must-matches! */
 int match(TOKEN_TYPE type, struct Stream* in){
-	if(!isEmptyStream(in) && ((struct Token*)advanceStream(in))->type == type) return PARSE_SUCC;
+	if(!stream_isEmpty(in) && ((struct Token*)stream_advance(in))->type == type) return PARSE_SUCC;
 	return PARSE_ERR;
 }
 
@@ -56,74 +49,168 @@ int match(TOKEN_TYPE type, struct Stream* in){
  */
 typedef enum{
 	FLAG_NONE = 0,
-	FLAG_DISALLOW_COMMA = 1 << 0
+	FLAG_DISALLOW_COMMA = 1 << 0,
 } ParseFlags;
 
 
 static int parse_expr_engine(struct AST** out, struct Stream* in, uint8_t flags){
-	if(isEmptyStream(in)) return PARSE_ERR;
+	// Expressions are non-empty
+	if(stream_isEmpty(in)) return PARSE_ERR;
 	
-	struct Generic_Stack* node_stk = createStack();
-	struct Generic_Stack* op_stk = createStack();
+	struct Stack* node_stk = stack_init();
+	struct Stack* op_stk = stack_init();
 
-	while(!isEmptyStream(in)){
-		struct Token* top = (struct Token*) peekStream(in);
-		TOKEN_TYPE cat = getCategory(top);
-		if(cat != OP && cat != LITERAL && cat != IDENT && top->type!=PUNC_OPEN_PAR) break;
-		if( (flags & FLAG_DISALLOW_COMMA) && top->type == OP_COMMA) break;
+	bool expected_unary = true;
+
+	while(!stream_isEmpty(in)){
+
+		struct Token* top = (struct Token*) stream_peek(in);
+		TOKEN_TYPE cat = getCategory(top->type);
+		
+		// Only elements allowed to be parsed are: Operators, Literals, Identifiers, and expr. starting w/ (
+		if(
+				cat != OP && 
+				cat != LITERAL && 
+				cat != IDENT && 
+				top->type!=PUNC_OPEN_PAR
+		) break;
+		
+
+		// If comma is disallowed, stop parser on ','
+		if( 
+				(flags & FLAG_DISALLOW_COMMA) && 
+				top->type == OP_COMMA
+		) break;	
+	
+		// Bracket Parsing
 		if(top->type == PUNC_OPEN_PAR){
-			advanceStream(in); //Consume '('
-			if((parse_expr(out, in))==PARSE_ERR || match(PUNC_CLOSE_PAR, in)==PARSE_ERR) return PARSE_ERR;
-			push(node_stk, *out);
+			stream_advance(in); //Consume '('
+			
+			//All is good inside parenthesis.
+			struct AST* paren_out = NULL;
+			
+			if(
+					(parse_expr_engine(&paren_out, in, FLAG_NONE)==PARSE_ERR) || 
+					match(PUNC_CLOSE_PAR, in) == PARSE_ERR
+			) return PARSE_ERR;
+			
+			stack_push(node_stk, paren_out);
+			expected_unary=false;
 			continue;
 		}
+
+		// Operator Parsing
 		if(cat==OP){
+
+			if (expected_unary){
+				demote_unary(top);
+				if(!is_unary(top))return PARSE_ERR;
+			}
+			else if(is_unary(top)){
+
+				/**
+				 * Special Handling for post ++, -- operators
+				 * Might consider removing them entirely to remove this edge-case 
+				 */
+				if(top->type == OP_PLUS_PLUS) top->type = OP_PLUS_PLUS_POST;
+				else if(top->type == OP_MINUS_MINUS) top->type = OP_MINUS_MINUS_POST;
+				else return PARSE_ERR;
+
+				struct AST* b1 = (struct AST*) stack_pop(node_stk);
+				if(!b1) return PARSE_ERR;
+
+				struct AST* new = createAST(top);
+				addChild(new, b1);
+				stack_push(node_stk, new);
+				stream_advance(in);
+				expected_unary = false;
+		
+				continue;
+			}
+
 			PREC p = precidence_table[top->type];
+			ASS a = assoc_table[top->type];
 			while( 
-			!isEmptyStack(op_stk) &&
+			!stack_isEmpty(op_stk) &&
 			(
-			 (p==PREC_ASS && p<precidence_table[((struct Token*)peek(op_stk))->type]) || 
-			 (p!= PREC_ASS && p<=precidence_table[((struct Token*)peek(op_stk))->type])
+			 ( (a==ASS_RIGHT) && p<precidence_table[((struct Token*)stack_peek(op_stk))->type]) || 
+			 ( (a==ASS_LEFT) && p<=precidence_table[((struct Token*)stack_peek(op_stk))->type])
 			)
 			)
 			{
-				struct Token* top = pop(op_stk);
+				struct Token* top = stack_pop(op_stk);
 				struct AST* new = createAST(top);
-				struct AST* b1 = (struct AST*) pop(node_stk);
-				struct AST* b2 = (struct AST*) pop(node_stk);
+				
+				if(is_unary(top)){
+					struct AST* b1 = (struct AST*) stack_pop(node_stk);
+					if(!b1) return PARSE_ERR;
+					addChild(new,b1);
+					stack_push(node_stk, new);
+					continue;
+				}
+
+				struct AST* b1 = (struct AST*) stack_pop(node_stk);
+				struct AST* b2 = (struct AST*) stack_pop(node_stk);
 
 				if(!b1 || !b2)return PARSE_ERR;
 				addChild(new,b2);
 				addChild(new,b1);
 				
-				push(node_stk, new);
+				stack_push(node_stk, new);
 			}
 
-			push(op_stk, top);
-			advanceStream(in);
+			stack_push(op_stk, top);
+			stream_advance(in);
+			expected_unary = true;
 		}
-		else{
+
+		// Identifier/Literal Parsing
+		else {
+			
+
+			//Check for func calls.
+			struct Token* nxt = stream_peekNext(in);
+			if(top->type == IDENT && nxt != NULL && nxt->type == PUNC_OPEN_PAR){
+		
+				struct AST* func_out = NULL;
+				if(parse_func_expr(&func_out, in) == PARSE_ERR) return PARSE_ERR;
+				stack_push(node_stk, func_out);
+				expected_unary = false;
+				continue;
+			}
+
 			struct AST* new = createAST(top);
-			new->val = top->value;
-			push(node_stk, new);
-			advanceStream(in);
+			stack_push(node_stk, new);
+			stream_advance(in);
+
+			expected_unary = false;
 		}
 	
 	}
 
-	while(!isEmptyStack(op_stk)){
-		struct Token* top = pop(op_stk);
+	while(!stack_isEmpty(op_stk)){
+		struct Token* top = stack_pop(op_stk);
 		struct AST* new = createAST(top);
-		struct AST* b1 = (struct AST*) pop(node_stk);
-		struct AST* b2 = (struct AST*) pop(node_stk);
+
+
+		if(is_unary(top)){
+			struct AST* b1 = (struct AST*) stack_pop(node_stk);
+			if(!b1) return PARSE_ERR;
+			addChild(new,b1);
+			stack_push(node_stk, new);
+			continue;
+		}
+
+		struct AST* b1 = (struct AST*) stack_pop(node_stk);
+		struct AST* b2 = (struct AST*) stack_pop(node_stk);
 
 		if(!b1 || !b2) return PARSE_ERR;
 		addChild(new,b2);
 		addChild(new,b1);
-		push(node_stk, new);
+		stack_push(node_stk, new);
 	}
-	struct AST* result = pop(node_stk);
-	if(!result || !isEmptyStack(node_stk))return PARSE_ERR;
+	struct AST* result = stack_pop(node_stk);
+	if(!result || !stack_isEmpty(node_stk))return PARSE_ERR;
 
 	*out = result;
 	return PARSE_SUCC;
@@ -138,45 +225,98 @@ static int parse_assign_expr(struct AST** out, struct Stream* in){
 	return	parse_expr_engine(out, in, FLAG_DISALLOW_COMMA);
 }
 
+static int parse_func_expr(struct AST** out, struct Stream* in){
+	/**
+	 * Safety check to ensure it is called at correct moment, although assumed it should always.
+	 */
+
+	struct Token* func_name = (struct Token*) stream_peek(in);
+	struct Token* open_par = (struct Token*) stream_peekNext(in);
+
+	if(
+			func_name == NULL ||
+			open_par == NULL ||
+			func_name->type != IDENT ||
+			open_par->type != PUNC_OPEN_PAR
+	) return PARSE_ERR;
+	
+	struct AST* parent = createAST(NULL);
+	struct AST* child = createAST(func_name);
+	parent->type = FUNC;
+	addChild(parent, child);
+
+	// Consume function name and paranthesis.
+	stream_advance(in);
+	stream_advance(in);
+
+	// Parsing arguments
+	
+	struct Token* next = (struct Token*) stream_peek(in);
+	if(next!=NULL && next->type == PUNC_CLOSE_PAR){
+		stream_advance(in);
+		*out = parent;
+		return PARSE_SUCC;
+	}
 
 
+	do{	
+		
+		struct AST* param = NULL;
+		if(parse_expr_engine(&param, in, FLAG_DISALLOW_COMMA) == PARSE_ERR || param == NULL) return PARSE_ERR;
+		addChild(parent, param);
+		
+		next = (struct Token*) stream_peek(in);
+		if(next != NULL && next->type == PUNC_CLOSE_PAR)break;
+		if(next != NULL && next->type == OP_COMMA){
+			stream_advance(in);
+			continue;
+		}
+		return PARSE_ERR;
+	}while(1);
 
+	if(next == NULL || next->type != PUNC_CLOSE_PAR) return PARSE_ERR;
+	stream_advance(in); //Consume the bracket.
+	
+	*out = parent;
+	return PARSE_SUCC;
+	
+}
 
 
 
 
 static int parse_assign(struct AST** out, struct Stream* in){
 
-	struct Token* leadingToken = (struct Token*) peekStream(in);
+	struct Token* leadingToken = (struct Token*) stream_peek(in);
 	if(!assignment_table[leadingToken->type]) return PARSE_ERR;
 	struct AST* parent = createAST(leadingToken);
-	advanceStream(in);
+	stream_advance(in);
 
 
-	while(!isEmptyStream(in)){
+	while(!stream_isEmpty(in)){
 		struct AST* id = NULL;
 		struct AST* val = NULL;
 
-		leadingToken = (struct Token*) peekStream(in);
+		leadingToken = (struct Token*) stream_peek(in);
 		if(leadingToken->type != IDENT) return PARSE_ERR;
 		id = createAST(leadingToken);
-		advanceStream(in);
+		stream_advance(in);
 		addChild(parent,id);
 
-		leadingToken = (struct Token*) peekStream(in);
+		leadingToken = (struct Token*) stream_peek(in);
 		if(leadingToken->type == PUNC_SC) break;
 		if(leadingToken->type == OP_COMMA){
-			advanceStream(in);
+			stream_advance(in);
 			continue;
 		}
 
 		if( match(OP_EQUALS, in) == PARSE_ERR || parse_assign_expr(&val, in) == PARSE_ERR ) return PARSE_ERR;
 		addChild(id, val);
 
-		leadingToken = (struct Token*) peekStream(in);
+		leadingToken = (struct Token*) stream_peek(in);
 		if(leadingToken->type == PUNC_SC) break;
 		if(leadingToken->type == OP_COMMA){
-			advanceStream(in);
+			stream_advance(in);
 			continue;
 		}
 		return PARSE_ERR;
@@ -189,7 +329,7 @@ static int parse_assign(struct AST** out, struct Stream* in){
 	return PARSE_SUCC;
 }
 
-static int parse_IF(struct AST** out, struct Stream* in){
+static int parse_KWD_IF(struct AST** out, struct Stream* in){
 	// IF AST:
 	// KWD_IF
 	// --->CONDITION
@@ -212,9 +352,9 @@ static int parse_IF(struct AST** out, struct Stream* in){
 	) return PARSE_ERR;
 
 
-	struct Token* leadingToken = (struct Token*) peekStream(in);
-	if(leadingToken->type == KWD_ELSE){
-		advanceStream(in);
+	struct Token* leadingToken = (struct Token*) stream_peek(in);
+	if(leadingToken != NULL && leadingToken->type == KWD_ELSE){
+		stream_advance(in);
 		if(parse_block(&elseBlk,in) == PARSE_ERR) return PARSE_ERR;
 	}
 	addChild(parent, cond);
@@ -226,7 +366,7 @@ static int parse_IF(struct AST** out, struct Stream* in){
 	return PARSE_SUCC;
 }
 
-static int parse_WHILE(struct AST** out, struct Stream* in){
+static int parse_KWD_WHILE(struct AST** out, struct Stream* in){
 	
 	// WHILE AST:
 	// KWD_WHILE
@@ -254,7 +394,7 @@ static int parse_WHILE(struct AST** out, struct Stream* in){
 	return PARSE_SUCC;
 }
 
-static int parse_FOR(struct AST** out, struct Stream* in){
+static int parse_KWD_FOR(struct AST** out, struct Stream* in){
 	// FOR STATEMENTS ARE REDUCED TO WHILE ONLY!!!!!
 	// AST LOOKS LIKE:
 	// BLOCK
@@ -265,7 +405,6 @@ static int parse_FOR(struct AST** out, struct Stream* in){
 	// ---  ---  ---> BLOCK (BODY)
 	// ---  ---  ---> UPDATION
 
-	struct AST* parent = NULL;
 	struct AST* ass = NULL;
 	struct AST* cond = NULL;
 	struct AST* upd = NULL;
@@ -276,16 +415,19 @@ static int parse_FOR(struct AST** out, struct Stream* in){
 	) return PARSE_ERR;
 
 
-	struct Token* leadingToken = (struct Token*) peekStream(in);
-	if(leadingToken->type == PUNC_SC) advanceStream(in);
+	struct Token* leadingToken = (struct Token*) stream_peek(in);
+	if(leadingToken == NULL) return PARSE_ERR;
+	else if(leadingToken->type == PUNC_SC) stream_advance(in);
 	else if( parse_assign(&ass, in) == PARSE_ERR ) return PARSE_ERR;
 
-	leadingToken = (struct Token*) peekStream(in);
-	if(leadingToken->type == PUNC_SC) advanceStream(in);
+	leadingToken = (struct Token*) stream_peek(in);
+	if(leadingToken == NULL) return PARSE_ERR;
+	else if(leadingToken->type == PUNC_SC) stream_advance(in);
 	else if( parse_expr(&cond, in) == PARSE_ERR  || match(PUNC_SC, in) == PARSE_ERR) return PARSE_ERR;
 
-	leadingToken = (struct Token*) peekStream(in);
-	if(leadingToken->type == PUNC_CLOSE_PAR) advanceStream(in);
+	leadingToken = (struct Token*) stream_peek(in);
+	if(leadingToken == NULL) return PARSE_ERR;
+	else if(leadingToken->type == PUNC_CLOSE_PAR) stream_advance(in);
 	else if( parse_expr(&upd, in) == PARSE_ERR  || match(PUNC_CLOSE_PAR, in) == PARSE_ERR) return PARSE_ERR;
 
 	if( parse_block(&bodyBlk, in) == PARSE_ERR ) return PARSE_ERR;
@@ -295,7 +437,7 @@ static int parse_FOR(struct AST** out, struct Stream* in){
 	if(cond == NULL){
 		cond = createAST(NULL);
 	       	cond->type = LITERAL_INT;
-		cond->val.i = 1;	
+		cond->value.i = 1;	
 	}
 
 	addChild(w, cond);
@@ -327,27 +469,32 @@ static int parse_FOR(struct AST** out, struct Stream* in){
  * Performs grammar-based dispatching.
  */
 static int parse_stmt(struct AST** out, struct Stream* in){
-	if(isEmptyStream(in)) return PARSE_ERR;
+	if(stream_isEmpty(in)) return PARSE_ERR;
 
 	// Statement may reduce to either empty... or expression.
-	struct Token* leadingToken = (struct Token*) peekStream(in);
+	struct Token* leadingToken = (struct Token*) stream_peek(in);
 	
 	
 	// Option 1: Statement -> EMPTY;
 	if(leadingToken->type == PUNC_SC){
-		advanceStream(in);
+		stream_advance(in);
 		*out = NULL;
 		return PARSE_SUCC;
 	}
 
 	// Option 2: Classic Statement
-	if(getCategory(leadingToken) == KWD){
+	if(getCategory(leadingToken->type) == KWD){
 		
 		// Current Plan: Try others, default case sends it to being an assingment statement, which will then do the rest.
 		switch(leadingToken->type){
-			case KWD_IF: return parse_IF(out, in);
-			case KWD_WHILE: return parse_WHILE(out, in);
-			case KWD_FOR: return parse_FOR(out, in);
+			#define PREC(a)
+			#define MAP(a,b,c)
+			#define ST(KWD) case KWD: return parse_##KWD(out,in);
+			#include "parser_mappings.def"
+			#undef PREC
+			#undef MAP
+			#undef ST		
+
 			default: return parse_assign(out, in); // Bad idea, but eeeh, works gud enough since it does internally check 
 		}
 	}
@@ -365,30 +512,30 @@ static int parse_stmt(struct AST** out, struct Stream* in){
  * This function should only (ideally) be called from parse_stmt(), if a block is included in grammar. (?) not necessary. 
  */
 static int parse_block(struct AST** out, struct Stream* in){
-	if(isEmptyStream(in)) return PARSE_ERR;
+	if(stream_isEmpty(in)) return PARSE_ERR;
 	
-	// Blocks are either empty... or statement.
-	struct Token* leadingToken = (struct Token*) peekStream(in);
+	// Blocks are either {...} or statement.
+	struct Token* leadingToken = (struct Token*) stream_peek(in);
 
 	// Option 1: Classic Block
 	if(leadingToken->type == PUNC_OPEN_BRACE){
-		advanceStream(in);
-		if(isEmptyStream(in)) return PARSE_ERR;	
-		struct Token* tk = (struct Token*) peekStream(in);
+		stream_advance(in);
+		if(stream_isEmpty(in)) return PARSE_ERR;	
+		struct Token* tk = (struct Token*) stream_peek(in);
 		
 		struct AST* parent = createAST(NULL);
 		parent->type = BLOCK;
 		
-		while(!isEmptyStream(in) && tk->type != PUNC_CLOSE_BRACE){
+		while(!stream_isEmpty(in) && tk->type != PUNC_CLOSE_BRACE){
 			struct AST* child_stmt = NULL;
 			if(parse_stmt(&child_stmt, in) == PARSE_ERR) return PARSE_ERR;
-			if(isEmptyStream(in)) return PARSE_ERR;
-			tk = (struct Token*) peekStream(in);
+			if(stream_isEmpty(in)) return PARSE_ERR;
+			tk = (struct Token*) stream_peek(in);
 	
 			addChild(parent,child_stmt);
 		}
 		
-		if (advanceStream(in) != NULL){
+		if (stream_advance(in) != NULL){
 			*out = parent;
 			return PARSE_SUCC;
 		}
@@ -417,12 +564,13 @@ int parse(struct Stream* input, struct Stream* output){
 	*/
 
 	struct AST* node = NULL;
-	while(!isEmptyStream(input)){
+	while(!stream_isEmpty(input)){
 		node = NULL;
 		if(parse_stmt(&node, input) == PARSE_SUCC){	
-			if(node!=NULL) appendStream(output, node);		
+			if(node!=NULL) stream_append(output, node);		
 		} 
 		else 	return PARSE_ERR;
 	}
 
+	return PARSE_SUCC;
 }

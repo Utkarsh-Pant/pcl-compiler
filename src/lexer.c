@@ -49,14 +49,15 @@ static void chkPromote(struct Token* tk){
 		TOKEN_TYPE kwd;
 	} dispatchTable[] =
 	{
-		{"if", KWD_IF},
-		{"else", KWD_ELSE},
-		{"int", KWD_INT},
-		{"char", KWD_CHR},
-		{"for", KWD_FOR},
-		{"while", KWD_WHILE},
-		{"break", KWD_BREAK},
-		{"continue", KWD_CONTINUE},
+		#define INIT(a,b)
+		#define TERM(a)
+		#define FAST(a,b)
+		#define KMAP(str, kwd) {str, kwd},
+		#include "token_mappings.def"
+		#undef INIT
+		#undef TERM
+		#undef FAST
+		#undef KMAP
 		{NULL, 0} // Ensure last entry is always NULL.
 	
 	};	
@@ -99,48 +100,6 @@ static struct Token* createToken_IDENT(char val){
 	return tk;
 }
 
-static struct Token* createToken_OP(char val){
-	/*
-	 * For operators and punctuations, we do not bother with setting token value and capacity.
-	 * Since they are directly inferred from the token type.
-	 * Satisfied with simplicity for now. If number of operators increase, worth discussing change to dispatch-based.
-	 */
-	
-	struct Token* tk = malloc(sizeof(struct Token));
-	switch(val){
-		case '+':
-			tk->type = OP_PLUS;
-			return tk;
-		case '-':
-			tk->type = OP_MINUS;
-			return tk;
-		case ',':
-			tk->type = OP_COMMA;
-			return tk;
-		case '/':
-			tk->type = OP_DIVIDE;
-			return tk;
-		case '*':
-			tk->type = OP_MULTIPLY;
-			return tk;
-		case '=':
-			tk->type = OP_EQUALS;
-			return tk;
-		case '<':
-			tk->type = OP_LESSER;
-			return tk;
-		case '>':
-			tk->type = OP_GREATER;
-			return tk;
-		case '!':
-			tk->type = OP_NOT;
-			return tk;
-		default: 
-			free(tk);
-			return NULL;
-	}
-	return NULL;
-}
 
 static struct Token* createToken_LITERAL(char val){
 	
@@ -165,46 +124,34 @@ static struct Token* createToken_LITERAL(char val){
 
 }
 
-static struct Token* createToken_PUNC(char c){
+static struct Token* createToken_OP(TOKEN_TYPE type){
 	struct Token* tk = malloc(sizeof(struct Token));
-	switch(c){
-		case '(': tk->type = PUNC_OPEN_PAR;
-			  break;
-		case ')': tk->type = PUNC_CLOSE_PAR;
-			  break;
-		case '[': tk->type = PUNC_OPEN_BRACKET;
-			  break;
-		case ']': tk->type = PUNC_CLOSE_BRACKET;
-			  break;
-		case '{': tk->type = PUNC_OPEN_BRACE;
-			  break;
-		case '}': tk->type = PUNC_CLOSE_BRACE;
-			  break;
-		case ';': tk->type = PUNC_SC;
-			  break;
-		default: free(tk);
-			 return NULL;
-
-	}	
+	tk->type = type;
 	return tk;
 }
+
 
 // Redirects to appropriate function calls. Also skips whitespaces.
 // For more Ref.: info-create-tokens
 int createToken(TOKEN_TYPE type, char val, struct Token** tk){
 
-	if(type  == IDENT) *tk=createToken_IDENT(val);
-	else if(type == OP) *tk = createToken_OP(val);
-	else if(type == LITERAL) *tk = createToken_LITERAL(val);				 
-	else if(type == PUNC) *tk = createToken_PUNC(val);
-	else if(type == WS) return 1;
+	TOKEN_TYPE tokenCat = getCategory(type);
+
+	if(tokenCat == WS) return LEX_SUC;
+	else if(tokenCat  == IDENT) *tk=createToken_IDENT(val);
+	else if(tokenCat == LITERAL) *tk = createToken_LITERAL(val);				 
+	else if(tokenCat == OP) *tk = createToken_OP(type);
+	else if(tokenCat == PUNC){
+		perror("Crticial Error: Unable to process multi-character punctuations (fast-path). Create function.\n");
+		return LEX_ERR;
+	}
 	else{
 		perror("Critical Error: Invalid token type.");
-		return 0;
+		return LEX_ERR;
 
 	}
 
-	return 1;
+	return LEX_SUC;
 }
 
 /* ----------------
@@ -234,33 +181,33 @@ static int updateToken_IDENT(struct Token* tk, FILE* fptr, char val){
 		int v_len = strlen(tk->value.s);
 		if( v_len == tk->cap -1){
 			tk->value.s = reallocarray(tk->value.s, sizeof(char), 2*(tk->cap));
-			if((tk->value.s) == NULL) return UPD_ERR;
+			if((tk->value.s) == NULL) return LEX_ERR;
 			tk->cap = 2*tk->cap;
 		}
 		
 		tk->value.s[v_len] = val;
 		tk->value.s[v_len+1] = 0;
 
-		return UPD_SUC;
+		return LEX_SUC;
 		
 	}
 
 	if(CHKN_WS(val)) ungetc(val, fptr);
-	return UPD_FIN;
+	return LEX_FIN;
 }
 
 static int updateToken_OP_PLUS(struct Token* tk, FILE* fptr, char val){
 	if(val == '+'){
 		tk->type = OP_PLUS_PLUS;
-		return UPD_SUC;
+		return LEX_SUC;
 	}
 	else if (val == '='){
 	       	tk->type = OP_PLUS_EQUALS;	
-		return UPD_SUC;
+		return LEX_SUC;
 	}
 	if (CHKN_WS(val)) ungetc(val,fptr);
 
-	return UPD_FIN;	
+	return LEX_FIN;	
 
 }
 
@@ -268,26 +215,30 @@ static int updateToken_OP_PLUS(struct Token* tk, FILE* fptr, char val){
 static int updateToken_OP_MINUS(struct Token* tk, FILE* fptr, char val){
 	if(val == '-'){
 		tk->type = OP_MINUS_MINUS;
-		return UPD_SUC;
+		return LEX_SUC;
 	}
 	else if (val == '='){
 	       	tk->type = OP_MINUS_EQUALS;	
-		return UPD_SUC;
+		return LEX_SUC;
+	}
+	else if (val == '>'){
+		tk->type = OP_ARROW;
+		return LEX_SUC;
 	}
 	if (CHKN_WS(val)) ungetc(val,fptr);
 
-	return UPD_FIN;	
+	return LEX_FIN;	
 
 }
 
 static int updateToken_OP_DIVIDE(struct Token* tk, FILE* fptr, char val){
 	if (val == '='){
 	       	tk->type = OP_DIVIDE_EQUALS;	
-		return UPD_SUC;
+		return LEX_SUC;
 	}
 
 	if (CHKN_WS(val)) ungetc(val,fptr);
-	return UPD_FIN;	
+	return LEX_FIN;	
 
 }
 
@@ -295,83 +246,112 @@ static int updateToken_OP_DIVIDE(struct Token* tk, FILE* fptr, char val){
 static int updateToken_OP_MULTIPLY(struct Token* tk, FILE* fptr, char val){
 	if (val == '='){
 	       	tk->type = OP_MULTIPLY_EQUALS;	
-		return UPD_SUC;
+		return LEX_SUC;
 	}
 	if (CHKN_WS(val)) ungetc(val,fptr);
 
-	return UPD_FIN;	
+	return LEX_FIN;	
 
 }
 
 static int updateToken_OP_EQUALS(struct Token* tk, FILE* fptr, char val){
 	if (val == '='){
 		tk->type = OP_EQUALS_EQUALS;
-		return UPD_SUC;
+		return LEX_SUC;
 	}
 
 	if (CHKN_WS(val)) ungetc(val,fptr);
-	return UPD_FIN;
+	return LEX_FIN;
 
 }
 
 static int updateToken_OP_LESSER(struct Token* tk, FILE* fptr, char val){
 	if (val == '='){
 		tk->type = OP_LESSER_EQUALS;
-		return UPD_FIN;
+		return LEX_SUC;
+	}
+	else if(val == '<'){
+		tk->type = OP_LSHIFT;
+		return LEX_SUC;
 	}
 
 	if (CHKN_WS(val)) ungetc(val, fptr);
-	return UPD_FIN;
+	return LEX_FIN;
 }
 
 static int updateToken_OP_GREATER(struct Token* tk, FILE* fptr, char val){
 	if (val == '='){
 		tk->type = OP_GREATER_EQUALS;
-		return UPD_FIN;
+		return LEX_SUC;
+	}
+	else if(val == '>'){
+		tk->type = OP_RSHIFT;
+		return LEX_SUC;
 	}
 
 	if (CHKN_WS(val)) ungetc(val, fptr);
-	return UPD_FIN;
+	return LEX_FIN;
 }
 
 static int updateToken_OP_NOT(struct Token* tk, FILE* fptr, char val){
 
 	if (val == '='){
 		tk->type = OP_NOT_EQUALS;
-		return UPD_FIN;
+		return LEX_SUC;
 	}
 
 	if (CHKN_WS(val)) ungetc(val, fptr);
-	return UPD_FIN;
+	return LEX_FIN;
 }
 
+static int updateToken_OP_BITWISE_AND(struct Token* tk, FILE* fptr, char val){
+
+	if (val == '&'){
+		tk->type = OP_AND;
+		return LEX_FIN;
+	}
+
+	if (CHKN_WS(val)) ungetc(val, fptr);
+	return LEX_FIN;
+}
+
+static int updateToken_OP_BITWISE_OR(struct Token* tk, FILE* fptr, char val){
+
+	if (val == '|'){
+		tk->type = OP_OR;
+		return LEX_SUC;
+	}
+
+	if (CHKN_WS(val)) ungetc(val, fptr);
+	return LEX_FIN;
+}
 static int updateToken_LITERAL_INT(struct Token* tk, FILE* fptr, char val){
 	if (val >= '0' && val <= '9'){
 		tk->value.i = tk->value.i*10 + (val-'0');
-		return UPD_SUC;
+		return LEX_SUC;
 	}
 
 	if (CHKN_WS(val)) ungetc(val,fptr);
-	return UPD_FIN;
+	return LEX_FIN;
 }
 
 static int updateToken_LITERAL_CHR(struct Token* tk, FILE* fptr, char val){
 	if (tk->cap != 0){
-		return (val=='\'') ? UPD_FIN : UPD_ERR;
+		return (val=='\'') ? LEX_FIN : LEX_ERR;
 	}
-	if (val=='\'') return UPD_ERR;
+	if (val=='\'') return LEX_ERR;
 	tk->cap = sizeof(char);
 	tk->value.c = val;
-	return UPD_SUC;
+	return LEX_SUC;
 }
 
 static int updateToken_LITERAL_STR(struct Token* tk, FILE* fptr, char val){
-	if (val == '\"') return UPD_FIN;
+	if (val == '\"') return LEX_FIN;
 	if(tk->cap == 0){ // First time initialization.
 		tk->value.s = calloc(sizeof(char), INITIAL_STRING_SIZE);		
 		tk->value.s[0] = val; // Null Terminator alrdy guranteed by calloc.
 		tk->cap = INITIAL_STRING_SIZE;
-		return UPD_SUC;
+		return LEX_SUC;
 	}
 	int n = strlen(tk->value.s);
 	if(n == tk->cap-1){
@@ -380,7 +360,7 @@ static int updateToken_LITERAL_STR(struct Token* tk, FILE* fptr, char val){
 	}
 	tk->value.s[n] = val;
 	tk->value.s[n+1] = 0;
-	return UPD_SUC;
+	return LEX_SUC;
 
 
 }
@@ -390,7 +370,7 @@ static int updateToken_TERMINAL(struct Token* tk, FILE* fptr, char val){
 	// For example, += is terminal, there are no decisions to be made
 	// (Other than consuming newline/space at best.
 	if (CHKN_WS(val)) ungetc(val,fptr);
-	return UPD_FIN;	
+	return LEX_FIN;	
 }
 
 //Servers as a redirector. Uses a dispatch table for efficiency.
@@ -399,44 +379,25 @@ static int updateToken(struct Token* tk, FILE* fptr, char val){
 
 	//Function pointer array to serve as dispatch table.
 	static int (*dispatchTable[TOKEN_TYPE_COUNT])(struct Token*, FILE*, char) = {
-		[IDENT] = &updateToken_IDENT,
-		[OP_PLUS] = &updateToken_OP_PLUS,
-		[OP_MINUS] = &updateToken_OP_MINUS,
-		[OP_DIVIDE] = &updateToken_OP_DIVIDE,
-		[OP_MULTIPLY] = &updateToken_OP_MULTIPLY,
-		[OP_NOT] = &updateToken_OP_NOT,
-		
-		[OP_PLUS_PLUS] = &updateToken_TERMINAL,
-		[OP_MINUS_MINUS] = &updateToken_TERMINAL,
-		
-		[OP_PLUS_EQUALS] = &updateToken_TERMINAL,
-		[OP_MINUS_EQUALS] = &updateToken_TERMINAL,
-		[OP_DIVIDE_EQUALS] = &updateToken_TERMINAL,
-		[OP_MULTIPLY_EQUALS] = &updateToken_TERMINAL,
-		[OP_EQUALS] = &updateToken_OP_EQUALS,
-		[OP_NOT_EQUALS] = &updateToken_TERMINAL,
-
-		[OP_EQUALS_EQUALS] = &updateToken_TERMINAL,
-		[OP_LESSER_EQUALS] = &updateToken_TERMINAL,
-		[OP_GREATER_EQUALS] = &updateToken_TERMINAL,
-		[OP_LESSER] = &updateToken_OP_LESSER,
-		[OP_GREATER] = &updateToken_OP_GREATER,
-		
-		[OP_COMMA] = &updateToken_TERMINAL,
+		#define INIT(sym, op) [op] = &updateToken_##op ,
+		#define TERM(op) [op] = &updateToken_TERMINAL,
+		#define FAST(a,b)
+		#define KMAP(a,b)
+		#include "token_mappings.def"
+		#undef INIT
+		#undef TERM
+		#undef FAST
+		#undef KMAP
 
 		[LITERAL_INT] = &updateToken_LITERAL_INT,
 		[LITERAL_CHR] = &updateToken_LITERAL_CHR,
 		[LITERAL_STR] = &updateToken_LITERAL_STR
 	};
 
-	if(dispatchTable[tk->type] == NULL) return UPD_ERR;
+	if(dispatchTable[tk->type] == NULL) return LEX_ERR;
 	return dispatchTable[tk->type](tk,fptr,val);
 }
 
-int is_fast(TOKEN_TYPE type){
-	if(type>PUNC && type<TOKEN_TYPE_COUNT) return 1;
-	return 0;
-}
 
 
 /* ----------------
@@ -445,7 +406,7 @@ int is_fast(TOKEN_TYPE type){
  * Updates the tokens and handles the return signals.
  * ----------------
  */
-int lex(char filename[static 1], struct Stream* output){
+int lex(const char filename[static 1], struct Stream* output){
 
 	/*  -----------------
 	 *  Creating a map.
@@ -457,43 +418,27 @@ int lex(char filename[static 1], struct Stream* output){
 	 *  Extra - Ref.: idea-tkmap
 	 *  ----------------
 	 */
-	int tk_map[128] = {0};	
+	char tk_map[128] = {0};
+	char fast_map[128] = {0}; // Create fast mapping.	
 	
 	// Initial Character set for identifieres.
-	tk_map['_'] = IDENT;
 	for(char c = 'a'; c<='z'; c++) tk_map[c] = IDENT;
 	for(char c = 'A'; c<='Z'; c++) tk_map[c] = IDENT;
-
-	// Initial characteres (broadly) for operators.
-	tk_map['+'] = OP;
-	tk_map['-'] = OP;
-	tk_map['*'] = OP;
-	tk_map['/'] = OP;
-	tk_map['='] = OP;
-	tk_map['<'] = OP;
-	tk_map['>'] = OP;
-	tk_map['!'] = OP;
-	tk_map[','] = OP;
-
 	// Initial characters for literals.
 	for(char c = '0'; c<= '9'; c++) tk_map[c] = LITERAL;
-	tk_map['\''] = LITERAL;
-	tk_map['\"'] = LITERAL;
-
-	// White space characters.
-	tk_map[' '] = WS;
-	tk_map['\n'] = WS;
-	tk_map['\t'] = WS;
-
 	
-	// Punctuations
-	tk_map['('] = PUNC;
-	tk_map[')'] = PUNC;
-	tk_map[';'] = PUNC;
-	tk_map['['] = PUNC;
-	tk_map[']'] = PUNC;
-	tk_map['{'] = PUNC;
-	tk_map['}'] = PUNC;
+	#define INIT(character, category) tk_map[character] = category;	
+	#define TERM(a)
+	#define FAST(character, category) \
+	tk_map[character] = category; \
+	fast_map[character] = 1;
+	#define KMAP(str, kwd)  // Ignore Keyword mapping here.
+	#include "token_mappings.def"
+	#undef INIT
+	#undef TERM
+	#undef FAST
+	#undef KMAP
+
 	// -------------------------------------------------
 	
 	FILE* fptr = fopen(filename, "r");
@@ -523,26 +468,34 @@ int lex(char filename[static 1], struct Stream* output){
 				if(c==EOF)break;	
 			
 			}
-			
-			if(!createToken(tk_map[c], c, &current_token)){
-				perror("Lexer Error.");
+			//Ignore Whitespaces.
+			if(tk_map[c] == WS) continue;
+
+
+			// Fast Path. Create token, be happy, end.
+			if(fast_map[c]){
+				current_token = (struct Token*) malloc(sizeof(struct Token));
+				current_token->type = tk_map[c];
+				stream_append(output, current_token);
+				current_token = NULL;
+				continue;
+			}
+
+			if(createToken(tk_map[c], c, &current_token) != LEX_SUC){
+				perror("Lexer Error: Unable to create token intializiation (Perhaps missing token mapping?)\n");
 				return EXIT_FAILURE;
 			}
-			if (current_token && is_fast(current_token->type)){
-				appendStream(output, current_token);
-				current_token = NULL;
-			}	
 			
 		}
 		else{
 			int status = updateToken(current_token, fptr, c);
-			if(status == UPD_FIN){
+			if(status == LEX_FIN){
 				if(current_token->type == IDENT) chkPromote(current_token);
-				appendStream(output, current_token);
+				stream_append(output, current_token);
 				current_token = NULL;
 			}
-			else if(status == UPD_SUC) continue;
-			else{ // UPD_ERR or some other unexpected code.
+			else if(status == LEX_SUC) continue;
+			else{ 
 				printf("Lexer Error!\n");
 				return EXIT_FAILURE;
 			}

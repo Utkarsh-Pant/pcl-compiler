@@ -5,9 +5,9 @@
 
 #include "stack.h"
 
-struct Generic_Stack* createStack(){
+struct Stack* stack_init(){
 
-	struct Generic_Stack* new_stack = malloc(sizeof(struct Generic_Stack));
+	struct Stack* new_stack = malloc(sizeof(struct Stack));
 	new_stack->cap = INITIAL_STACK_SIZE;
 	new_stack->top = -1;
 	new_stack->arr = calloc(INITIAL_STACK_SIZE, sizeof(void*));
@@ -15,16 +15,16 @@ struct Generic_Stack* createStack(){
 	return new_stack;
 
 }
-void push(struct Generic_Stack* stack, void* new){
+void stack_push(struct Stack* stack, void* newEle){
 	if(stack->top >= stack->cap-1){
 		/*Grow internal array.*/
 		stack->cap = stack->cap*2;
 		stack->arr = reallocarray(stack->arr, stack->cap, sizeof(void*));
 	}
-	stack->arr[++stack->top] = new;
+	stack->arr[++stack->top] = newEle;
 }
 
-void* pop(struct Generic_Stack* stack){
+void* stack_pop(struct Stack* stack){
 	if(stack->top == -1) return NULL;
 	void* out = stack->arr[stack->top--];
 	if(stack->cap > MIN_SIZE && stack->top <= ((stack->cap)/4) -1){
@@ -38,11 +38,11 @@ void* pop(struct Generic_Stack* stack){
 
 }
 
-void* peek(struct Generic_Stack* stack){
+void* stack_peek(struct Stack* stack){
 	if(stack->top == -1) return NULL;
 	return stack->arr[stack->top];
 }
 
-int isEmptyStack(struct Generic_Stack* stack){
+bool stack_isEmpty(struct Stack* stack){
 	return stack->top == -1;
 }

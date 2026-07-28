@@ -1,0 +1,92 @@
+/**
+* Contains initial character to token category mappings.
+* Additional mappings present in the lexer automatically:
+* Letters -> IDENT
+* Numbers -> LITERAL
+*
+* @warning Lexer works ONLY in ascii range currently!
+* @warning Be extremely careful when using fast-path. Incase a token may upgrade to another. For ex: ! -> !=
+* @note This definitions are read after preset letter/number ones, as such you will overwrite them incase of collision.
+*
+*/
+
+
+/**
+* Initial Token Mappings (Also require manual updation)
+*/
+INIT('_', IDENT)
+INIT('+', OP_PLUS)
+INIT('-', OP_MINUS)
+INIT('*', OP_MULTIPLY)
+INIT('/', OP_DIVIDE)
+INIT('=', OP_EQUALS)
+INIT('<', OP_LESSER)
+INIT('>', OP_GREATER)
+INIT('!', OP_NOT)
+INIT('&', OP_BITWISE_AND)
+INIT('|', OP_BITWISE_OR)
+
+/*
+* Not for future:
+* Incase of 3-character operators like <<=, create a MID(...) macro too.
+*/
+
+
+/**
+* Terminal Token Mappings for updation.
+*/
+TERM(OP_PLUS_EQUALS)
+TERM(OP_MINUS_EQUALS)
+TERM(OP_DIVIDE_EQUALS)
+TERM(OP_MULTIPLY_EQUALS)
+TERM(OP_PLUS_PLUS)
+TERM(OP_MINUS_MINUS)
+TERM(OP_NOT_EQUALS)
+TERM(OP_EQUALS_EQUALS)
+TERM(OP_LESSER_EQUALS)
+TERM(OP_GREATER_EQUALS)
+TERM(OP_AND)
+TERM(OP_OR)
+TERM(OP_DOT)
+TERM(OP_LSHIFT)
+TERM(OP_RSHIFT)
+TERM(OP_ARROW)
+TERM(OP_COMMA)
+
+/**
+* Fast Path Tokens
+*/
+FAST('^', OP_BITWISE_XOR)
+FAST('%', OP_MODULO)
+FAST('~', OP_BITWISE_NOT)
+FAST('.', OP_DOT)
+FAST(',', OP_COMMA)
+
+FAST(' ', WS)
+FAST('\n', WS)
+FAST('\t', WS)
+
+FAST('(', PUNC_OPEN_PAR)
+FAST(')', PUNC_CLOSE_PAR)
+FAST('[', PUNC_OPEN_BRACKET)
+FAST(']', PUNC_CLOSE_BRACKET)
+FAST('{', PUNC_OPEN_BRACE)
+FAST('}', PUNC_CLOSE_BRACE)
+FAST(';', PUNC_SC)
+
+
+/**
+* Keyword Mappings
+*/
+
+KMAP("if", KWD_IF)
+KMAP("else", KWD_ELSE)
+KMAP("int", KWD_INT)
+KMAP("char", KWD_CHR)
+KMAP("for", KWD_FOR)
+KMAP("while", KWD_WHILE)
+KMAP("break", KWD_BREAK)
+KMAP("continue", KWD_CONTINUE)
+
+
+

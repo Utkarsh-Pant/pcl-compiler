@@ -10,7 +10,18 @@
 
 #include "hmap.h"
 
+#define BK_DEL (struct HashEntry*)1
+
+struct HashEntry{
+	uint64_t hsh;
+	char* key;
+	void* val;
+};
+
 struct HashMap* hmap_init(void){
+    // Ensure INIT_CAPCITY has only 1 bit set (power of 2)
+    assert(INIT_CAPACITY > 0 && (INIT_CAPACITY & (INIT_CAPACITY - 1)) == 0);
+
 	struct HashMap* new = malloc(sizeof(struct HashMap));
 	new->arr = calloc(INIT_CAPACITY, sizeof(struct HashEntry*));
 	new->capacity = INIT_CAPACITY;
@@ -19,7 +30,7 @@ struct HashMap* hmap_init(void){
 	return new;
 }
 
-static void hmap_add_no_realloc(char* key, struct HashEntry* val_entry, struct HashMap* hmap){
+static void hmap_add_no_realloc(struct HashMap* hmap, char* key, struct HashEntry* val_entry){
 
 
 	uint64_t hsh = HASH(key, strlen(key)+1); // +1 to include \0
@@ -64,14 +75,14 @@ static void resize(struct HashMap* hmap){
 
 	for(size_t i = 0; i<old_cap; i++){
 		if(old_arr[i]!= NULL && old_arr[i] != BK_DEL){
-			hmap_add_no_realloc(old_arr[i]->key, old_arr[i], hmap);
+			hmap_add_no_realloc(hmap, old_arr[i]->key, old_arr[i]);
 		}
 	}
 
 	free(old_arr);
 }
 
-void* hmap_get(char* key, struct HashMap* hmap){
+void* hmap_get(struct HashMap* hmap, char* key){
 	uint64_t hsh = HASH(key, strlen(key)+1);
 	size_t loc = hsh & (hmap->capacity-1);
 		
@@ -88,9 +99,9 @@ void* hmap_get(char* key, struct HashMap* hmap){
 
 
 	return NULL;
-};
+}
 
-void* hmap_del(char* key, struct HashMap* hmap){
+void* hmap_del(struct HashMap* hmap, char* key){
 	
 	uint64_t hsh = HASH(key, strlen(key)+1);
 	size_t loc = hsh & (hmap->capacity-1);
@@ -119,7 +130,7 @@ void* hmap_del(char* key, struct HashMap* hmap){
 	return NULL;
 }
 
-void hmap_add(char* key, void* val, struct HashMap* hmap){
+void* hmap_add(struct HashMap* hmap, char* key, void* val){
 
 
 	uint64_t hsh = HASH(key, strlen(key)+1); // +1 to include \0
@@ -136,8 +147,9 @@ void hmap_add(char* key, void* val, struct HashMap* hmap){
 			hmap->arr[loc]->hsh == hsh &&
 			strcmp(hmap->arr[loc]->key, key) == 0
 		){
+            void* old_val = hmap->arr[loc]->val;
 			hmap->arr[loc]->val = val;
-			return;
+			return old_val;
 		}
 
 
@@ -153,6 +165,8 @@ void hmap_add(char* key, void* val, struct HashMap* hmap){
 	hmap->arr[loc] = new_entry;
 	hmap->entries++;
 	resize(hmap);
+
+    return NULL;
 	
 }
 
