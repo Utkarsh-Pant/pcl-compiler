@@ -8,8 +8,8 @@ All parts of the compiler will be written in C.
 
 Current Language Goals:
 
-    -> Simple Arithematic Expressions
-    -> Variables with datatypes: int, float, char, bool
+    -> Simple Arithematic Expressions and operator support
+    -> Variables with datatypes: int, char
     -> Basic I/O Functionaity
     -> Control and conditional statements.
 
@@ -17,7 +17,7 @@ Current Language Goals:
 
 Current Status: 
 Lexer working and completed (Open to changes)
-Expression parsing completed and working to improve statement parsing.
+Parser working and completed w/ grammer parsing.
 Symbol Table structure is made, deciding on few design decisions before integrating for semantic analysis.
 
 For output checking:
