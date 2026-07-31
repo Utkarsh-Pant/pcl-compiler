@@ -8,29 +8,19 @@
  */
 
 static PREC precidence_table[TOKEN_TYPE_COUNT]={
-	#define PREC(a)
 	#define MAP(tok, prec, ass) [tok] = prec,
-	#define ST(a)
 	#include "parser_mappings.def"
-	#undef PREC
-	#undef MAP
-	#undef ST	
 };
 
 static ASS assoc_table[TOKEN_TYPE_COUNT] = {
 	
-	#define PREC(a)
 	#define MAP(tok, prec, ass) [tok] = ass,
-	#define ST(a)
 	#include "parser_mappings.def"
-	#undef PREC
-	#undef MAP
-	#undef ST	
 };
 
-static unsigned assignment_table[TOKEN_TYPE_COUNT]={
-	[KWD_INT] = 1,
-	[KWD_CHR] = 1
+static unsigned dtype_table[TOKEN_TYPE_COUNT]={
+	#define DTYPE(name) [name] = 1,
+	#include "parser_mappings.def"
 };
 
 static int parse_expr(struct AST** out, struct Stream* in);
@@ -104,9 +94,9 @@ static int parse_expr_engine(struct AST** out, struct Stream* in, uint8_t flags)
 
 			if (expected_unary){
 				demote_unary(top);
-				if(!is_unary(top))return PARSE_ERR;
+				if(!is_unary(top->type))return PARSE_ERR;
 			}
-			else if(is_unary(top)){
+			else if(is_unary(top->type)){
 
 				/**
 				 * Special Handling for post ++, -- operators
@@ -141,7 +131,7 @@ static int parse_expr_engine(struct AST** out, struct Stream* in, uint8_t flags)
 				struct Token* top = stack_pop(op_stk);
 				struct AST* new = createAST(top);
 				
-				if(is_unary(top)){
+				if(is_unary(top->type)){
 					struct AST* b1 = (struct AST*) stack_pop(node_stk);
 					if(!b1) return PARSE_ERR;
 					addChild(new,b1);
@@ -193,7 +183,7 @@ static int parse_expr_engine(struct AST** out, struct Stream* in, uint8_t flags)
 		struct AST* new = createAST(top);
 
 
-		if(is_unary(top)){
+		if(is_unary(top->type)){
 			struct AST* b1 = (struct AST*) stack_pop(node_stk);
 			if(!b1) return PARSE_ERR;
 			addChild(new,b1);
@@ -288,7 +278,7 @@ static int parse_func_expr(struct AST** out, struct Stream* in){
 static int parse_assign(struct AST** out, struct Stream* in){
 
 	struct Token* leadingToken = (struct Token*) stream_peek(in);
-	if(!assignment_table[leadingToken->type]) return PARSE_ERR;
+	if(!dtype_table[leadingToken->type]) return PARSE_ERR;
 	struct AST* parent = createAST(leadingToken);
 	stream_advance(in);
 
@@ -487,13 +477,8 @@ static int parse_stmt(struct AST** out, struct Stream* in){
 		
 		// Current Plan: Try others, default case sends it to being an assingment statement, which will then do the rest.
 		switch(leadingToken->type){
-			#define PREC(a)
-			#define MAP(a,b,c)
 			#define ST(KWD) case KWD: return parse_##KWD(out,in);
 			#include "parser_mappings.def"
-			#undef PREC
-			#undef MAP
-			#undef ST		
 
 			default: return parse_assign(out, in); // Bad idea, but eeeh, works gud enough since it does internally check 
 		}

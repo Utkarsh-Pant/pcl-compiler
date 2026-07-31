@@ -25,6 +25,6 @@
  * @return Calculated FNV-1a hash of the input.
  *
 */
-uint64_t fnv(void* input, size_t size);
+uint64_t fnv(const void* input, size_t size);
 
 #endif

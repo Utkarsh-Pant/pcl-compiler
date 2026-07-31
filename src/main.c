@@ -16,6 +16,7 @@
 #include "stream.h"
 #include "lexer.h"
 #include "parser.h"
+#include "semantic_analyser.h"
 
 /**
  * @brief Checks whether a given filename belongs to our extension (i.e. .pcl)
@@ -65,11 +66,17 @@ int main(int argc, char** argv){
 			continue;
 		}
 		printf("Parse output:\n");
+
+
+		struct SymbolTable* table = symtable_init(NULL);
+		analyse(treeStream, table);
 		itr = stream_getIterator(treeStream);
 		for(int i = 0; i<itr.n; i++){
 			printAST((struct AST*)itr.arr[i]);
 		}
 		printf("\n");
+	
+		symtable_print(table);
 	}
 	return EXIT_SUCCESS;
 

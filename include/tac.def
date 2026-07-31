@@ -1,0 +1,14 @@
+#ifndef TAC
+#define TAC(a)
+#endif
+
+TAC(TAC_ADD)
+TAC(TAC_SUB)
+TAC(TAC_MUL)
+TAC(TAC_DIV)
+
+
+
+TAC(TAC_COPY)
+
+#undef TAC

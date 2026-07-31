@@ -30,7 +30,7 @@ struct HashMap* hmap_init(void){
 	return new;
 }
 
-static void hmap_add_no_realloc(struct HashMap* hmap, char* key, struct HashEntry* val_entry){
+static void hmap_add_no_realloc(struct HashMap* hmap, const char* key, struct HashEntry* val_entry){
 
 
 	uint64_t hsh = HASH(key, strlen(key)+1); // +1 to include \0
@@ -82,7 +82,7 @@ static void resize(struct HashMap* hmap){
 	free(old_arr);
 }
 
-void* hmap_get(struct HashMap* hmap, char* key){
+void* hmap_get(struct HashMap* hmap, const char* key){
 	uint64_t hsh = HASH(key, strlen(key)+1);
 	size_t loc = hsh & (hmap->capacity-1);
 		
@@ -101,7 +101,7 @@ void* hmap_get(struct HashMap* hmap, char* key){
 	return NULL;
 }
 
-void* hmap_del(struct HashMap* hmap, char* key){
+void* hmap_del(struct HashMap* hmap, const char* key){
 	
 	uint64_t hsh = HASH(key, strlen(key)+1);
 	size_t loc = hsh & (hmap->capacity-1);
@@ -130,7 +130,7 @@ void* hmap_del(struct HashMap* hmap, char* key){
 	return NULL;
 }
 
-void* hmap_add(struct HashMap* hmap, char* key, void* val){
+void* hmap_add(struct HashMap* hmap, const char* key, void* val){
 
 
 	uint64_t hsh = HASH(key, strlen(key)+1); // +1 to include \0
@@ -141,8 +141,9 @@ void* hmap_add(struct HashMap* hmap, char* key, void* val){
 	for(size_t i = 0; i<hmap->capacity; i++){
 		loc = (hsh + (i*(i+1)/2)) & (hmap->capacity-1);
 		if(hmap->arr[loc] == NULL) break; // INSERT >:)
-		else if(hmap->arr[loc] == BK_DEL) 
+		else if(hmap->arr[loc] == BK_DEL){
 			if(first_seen == -1) first_seen = loc;
+		}
 		else if(
 			hmap->arr[loc]->hsh == hsh &&
 			strcmp(hmap->arr[loc]->key, key) == 0

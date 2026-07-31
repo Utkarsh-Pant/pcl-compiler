@@ -1,3 +1,19 @@
+#ifndef INIT
+#define INIT(a,b)
+#endif
+
+#ifndef TERM
+#define TERM(a)
+#endif
+
+#ifndef KMAP
+#define KMAP(a,b)
+#endif
+
+#ifndef FAST
+#define FAST(a,b)
+#endif
+
 /**
 * Contains initial character to token category mappings.
 * Additional mappings present in the lexer automatically:
@@ -15,6 +31,8 @@
 * Initial Token Mappings (Also require manual updation)
 */
 INIT('_', IDENT)
+INIT('\'', LITERAL_INT) // '
+INIT('\"', LITERAL_STR)
 INIT('+', OP_PLUS)
 INIT('-', OP_MINUS)
 INIT('*', OP_MULTIPLY)
@@ -89,4 +107,7 @@ KMAP("break", KWD_BREAK)
 KMAP("continue", KWD_CONTINUE)
 
 
-
+#undef INIT
+#undef TERM
+#undef FAST
+#undef KMAP

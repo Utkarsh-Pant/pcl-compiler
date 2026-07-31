@@ -5,7 +5,7 @@
  * Size: sizeof(hash-input)
  *
  */
-uint64_t fnv(void* input, size_t size){
+uint64_t fnv(const void* input, size_t size){
 	uint64_t hash = FNV_OFFSET_BASIS;
 	
 	for(size_t i = 0; i<size; i++){

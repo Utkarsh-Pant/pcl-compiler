@@ -22,10 +22,7 @@
  */
 typedef enum{
         #define X(name, desc) name, 
-	#define UN(a,b) 
 	#include "tokens.def"
-        #undef X
-	#undef UN
         TOKEN_TYPE_COUNT
 } TOKEN_TYPE;
 
@@ -46,8 +43,8 @@ struct Token{
 
 };
 
-void printToken(struct Token*);
-TOKEN_TYPE getCategory(TOKEN_TYPE);
-bool is_unary(struct Token*);
-void demote_unary(struct Token*);
+void printToken(struct Token* tok);
+TOKEN_TYPE getCategory(TOKEN_TYPE type);
+bool is_unary(TOKEN_TYPE type);
+void demote_unary(struct Token* tok);
 #endif

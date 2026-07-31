@@ -1,3 +1,19 @@
+#ifndef PREC
+#define PREC(a)
+#endif
+
+#ifndef MAP
+#define MAP(a,b,c)
+#endif
+
+#ifndef ST
+#define ST(a)
+#endif
+
+#ifndef DTYPE
+#define DTYPE(a)
+#endif
+
 PREC(PREC_ERR)
 PREC(PREC_COMMA)
 PREC(PREC_ASS)
@@ -63,3 +79,11 @@ MAP(OP_ARROW, PREC_ERR, ASS_LEFT)
 ST(KWD_IF)
 ST(KWD_WHILE)
 ST(KWD_FOR)
+
+DTYPE(KWD_INT)
+DTYPE(KWD_CHR)
+
+#undef PREC
+#undef MAP
+#undef ST
+#undef DTYPE

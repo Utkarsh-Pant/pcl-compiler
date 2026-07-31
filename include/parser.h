@@ -21,12 +21,7 @@ typedef enum{
 
 typedef enum{
 	#define PREC(label) label,
-	#define MAP(a,b,c)
-	#define ST(a)
 	#include "parser_mappings.def"
-	#undef PREC
-	#undef MAP
-	#undef ST
 
 } PREC;
 

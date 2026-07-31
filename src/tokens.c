@@ -2,18 +2,13 @@
 
 static char* dispatchTable[TOKEN_TYPE_COUNT] = {
     	#define X(name, desc) [name] = desc,
-	#define UN(a,b)
     	#include "tokens.def"
-    	#undef X
-	#undef UN
 };
 
 static TOKEN_TYPE unaryMap[TOKEN_TYPE_COUNT] = {
 	#define X(name, desc) [name] = name,
 	#define UN(name, un_name) [name] = un_name,
 	#include "tokens.def"
-	#undef X
-	#undef UN
 };
 
 void printToken(struct Token* tk){
@@ -41,8 +36,7 @@ TOKEN_TYPE getCategory(TOKEN_TYPE type){
 	return type;	
 }
 
-bool is_unary(struct Token* tk){
-	TOKEN_TYPE type = tk->type;
+bool is_unary(TOKEN_TYPE type){
 	if(type>OP_UN && type<OP_UN_TERM_END) return true;
 	return false;
 }

@@ -1,8 +1,10 @@
-#include "tokens.h"
-
 #ifndef TREE_H
 #define TREE_H
 
+#include "tokens.h"
+
+struct TableRecord;
+struct SymbolTable;
 
 struct AST{
 
@@ -11,6 +13,11 @@ struct AST{
 	size_t children_count;
 	struct AST** children;
 
+	// Semantic Attributes:
+	struct TableRecord* entry;
+	struct SymbolTable* table;
+	TOKEN_TYPE result_type;
+	
 };
 
 void printAST(struct AST*);

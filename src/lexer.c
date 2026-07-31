@@ -49,15 +49,8 @@ static void chkPromote(struct Token* tk){
 		TOKEN_TYPE kwd;
 	} dispatchTable[] =
 	{
-		#define INIT(a,b)
-		#define TERM(a)
-		#define FAST(a,b)
 		#define KMAP(str, kwd) {str, kwd},
 		#include "token_mappings.def"
-		#undef INIT
-		#undef TERM
-		#undef FAST
-		#undef KMAP
 		{NULL, 0} // Ensure last entry is always NULL.
 	
 	};	
@@ -381,13 +374,7 @@ static int updateToken(struct Token* tk, FILE* fptr, char val){
 	static int (*dispatchTable[TOKEN_TYPE_COUNT])(struct Token*, FILE*, char) = {
 		#define INIT(sym, op) [op] = &updateToken_##op ,
 		#define TERM(op) [op] = &updateToken_TERMINAL,
-		#define FAST(a,b)
-		#define KMAP(a,b)
 		#include "token_mappings.def"
-		#undef INIT
-		#undef TERM
-		#undef FAST
-		#undef KMAP
 
 		[LITERAL_INT] = &updateToken_LITERAL_INT,
 		[LITERAL_CHR] = &updateToken_LITERAL_CHR,
@@ -418,26 +405,20 @@ int lex(const char filename[static 1], struct Stream* output){
 	 *  Extra - Ref.: idea-tkmap
 	 *  ----------------
 	 */
-	char tk_map[128] = {0};
-	char fast_map[128] = {0}; // Create fast mapping.	
+	unsigned char tk_map[128] = {0};
+	unsigned char fast_map[128] = {0}; // Create fast mapping.	
 	
 	// Initial Character set for identifieres.
-	for(char c = 'a'; c<='z'; c++) tk_map[c] = IDENT;
-	for(char c = 'A'; c<='Z'; c++) tk_map[c] = IDENT;
+	for(unsigned char c = 'a'; c<='z'; c++) tk_map[c] = IDENT;
+	for(unsigned char c = 'A'; c<='Z'; c++) tk_map[c] = IDENT;
 	// Initial characters for literals.
-	for(char c = '0'; c<= '9'; c++) tk_map[c] = LITERAL;
+	for(unsigned char c = '0'; c<= '9'; c++) tk_map[c] = LITERAL;
 	
 	#define INIT(character, category) tk_map[character] = category;	
-	#define TERM(a)
 	#define FAST(character, category) \
 	tk_map[character] = category; \
 	fast_map[character] = 1;
-	#define KMAP(str, kwd)  // Ignore Keyword mapping here.
 	#include "token_mappings.def"
-	#undef INIT
-	#undef TERM
-	#undef FAST
-	#undef KMAP
 
 	// -------------------------------------------------
 	

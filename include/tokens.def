@@ -4,10 +4,19 @@
  * @ingroup Core
 */
 
+#ifndef X
+#define X(a,b)
+#endif
+
+#ifndef UN
+#define UN(a,b)
+#endif
+
 X(ERR, "Error")
 X(WS, "WS")
 X(BLOCK, "Block")
 X(FUNC, "Function")
+X(CONV, "CONV")
 X(IDENT, "ID")
 X(KWD, "KWD-CATEGORY-MARKER") // Keyword (I have decided not to be verbose here.
      // I believe this decision should aid the parser slightly.
@@ -87,3 +96,6 @@ X(PUNC_TERM_END, "PUNC-END-MARKER")
 UN(OP_PLUS, OP_UN_PLUS)
 UN(OP_MINUS, OP_UN_MINUS)
 UN(OP_BITWISE_AND, OP_UN_BITWISE_AND)
+
+#undef X
+#undef UN

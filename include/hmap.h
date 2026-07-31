@@ -57,7 +57,7 @@ struct HashMap* hmap_init(void);
  *
  * @return Pointer to the value, returns NULL if not found.
  */
-void* hmap_get(struct HashMap* hmap, char* key);
+void* hmap_get(struct HashMap* hmap, const char* key);
 
 /**
  * Delete a key from the hashmap.
@@ -69,7 +69,7 @@ void* hmap_get(struct HashMap* hmap, char* key);
  *
  * @note Does not free the said values, ownership belongs to the caller.
  */
-void* hmap_del(struct HashMap* hmap, char* key);
+void* hmap_del(struct HashMap* hmap, const char* key);
 
 /**
  * Add a key-value pair to the hashmap.
@@ -80,6 +80,6 @@ void* hmap_del(struct HashMap* hmap, char* key);
  *
  * @return Incase a value exists already for given key, returns the replaced value. Otherwise NULL.
  */
-void* hmap_add(struct HashMap* hmap, char* key, void* val);
+void* hmap_add(struct HashMap* hmap, const char* key, void* val);
 
 #endif
