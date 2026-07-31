@@ -18,7 +18,8 @@ Current Language Goals:
 Current Status: 
 Lexer working and completed (Open to changes)
 Parser working and completed w/ grammer parsing.
-Symbol Table structure is made, deciding on few design decisions before integrating for semantic analysis.
+Semantic Analysis and symbol table generation complete.
+Working on TAC generation.
 
 For output checking:
 make dev 
