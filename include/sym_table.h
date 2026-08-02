@@ -13,13 +13,16 @@
 struct AST;
 
 struct VarData{
+	bool is_global;
 	int stack_offset;
 	bool assigned;
+
 };
 
 struct FuncData{
 	size_t arg_count;
 	bool is_extern;
+	bool is_variadic;
 };
 
 struct TableRecord{
@@ -39,6 +42,7 @@ struct SymbolTable{
 	struct SymbolTable* parent;
 
 	size_t total_bytes;
+	size_t max_bytes;
 	struct Stream* keys; // For printing only, can be removed
 };
 

@@ -13,11 +13,13 @@ typedef enum{
 
 	#define TAC(node) node,
 	#include "tac.def"
-
+	TAC_COUNT
 } TAC_TYPE;
 
 struct TACArg{
 	bool is_literal;
+	bool is_string;
+	bool is_addr_of; // Temporary to make scanf work, will implement proper procedures later.
 	union{
 		struct TableRecord* arg;
 		union token_val value;

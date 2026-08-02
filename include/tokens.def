@@ -46,7 +46,7 @@ X(OP_PLUS_PLUS, "++")
 X(OP_MINUS_MINUS, "--")
 X(OP_PLUS_PLUS_POST, "++(post)")
 X(OP_MINUS_MINUS_POST, "--(post)")
-X(OP_UN_BITWISE_AND, "&")
+X(OP_UN_BITWISE_AND, "&(addr)")
 X(OP_UN_TERM_END, "OP-UNARY-END-MARKER")
 
 

@@ -253,7 +253,10 @@ static struct TACArg generate_IDENT(struct AST* node, struct TACList* lst, struc
 }
 
 static struct TACArg generate_LITERAL(struct AST* node, struct TACList* lst, struct SymbolTable* table){
-	return gen_literal_arg(node->value);
+	
+	struct TACArg res = gen_literal_arg(node->value);
+	if(node->type == LITERAL_STR) res.is_string = true;
+	return res;
 }
 
 static struct TACArg generate_OP_DEFAULT(struct AST* node, struct TACList* lst, struct SymbolTable* table){
@@ -332,8 +335,7 @@ static struct TACArg generate_OP_PLUS_PLUS_POST(struct AST* node, struct TACList
 
 	struct TACArg arg1 = gen_arg(node->children[0]->entry);
 	union token_val value;
-	value.i = 1;
-	
+	value.i=1;
 	struct TACArg arg2 = gen_literal_arg(value);
 
 	struct TableRecord* res = gen_temp_var(node->result_type, table);
@@ -364,7 +366,6 @@ static struct TACArg generate_OP_MINUS_MINUS_POST(struct AST* node, struct TACLi
 	struct TACArg arg1 = gen_arg(node->children[0]->entry);
 	union token_val value;
 	value.i = 1;
-	
 	struct TACArg arg2 = gen_literal_arg(value);
 
 	struct TableRecord* res = gen_temp_var(node->result_type, table);
@@ -435,6 +436,48 @@ static struct TACArg generate_CONV(struct AST* node, struct TACList* lst, struct
 
 }
 
+static struct TACArg generate_FUNC(struct AST* node, struct TACList* lst, struct SymbolTable* table){	
+	
+	for(int i = 1; i< node->children_count; i++){
+		struct TACArg arg; 
+
+		if(node->children[i]->type == OP_UN_BITWISE_AND){
+			//Temporarily dont generate any ADDRESS OF operations since we dont have pointer types
+			//So function calls will hurt 
+			//Since currently we truncate even 64bit to 32bit
+			arg = gen_arg(node->children[i]->children[0]->entry);
+			arg.is_addr_of = true;			
+		}else{
+			arg = generate(node->children[i], lst, table);
+		}
+
+		TACList_push(
+				lst,
+				arg,
+				(struct TACArg){0},
+				NULL,
+				i-1,
+				TAC_PARAM
+			);
+	}
+
+	struct TACArg call_arg = generate(node->children[0], lst, table);
+
+	struct TableRecord* res = gen_temp_var(node->result_type, table);
+
+	TACList_push(
+		lst,
+		call_arg,
+		(struct TACArg){0},
+		res,
+		node->children_count -1,
+		TAC_CALL
+		);
+
+	return gen_arg(res);
+
+}
+
 
 static struct TACArg generate(struct AST* node, struct TACList* lst, struct SymbolTable* table){
 	
@@ -447,10 +490,14 @@ static struct TACArg generate(struct AST* node, struct TACList* lst, struct Symb
 		case IDENT: return generate_IDENT(node, lst, table);
 		case LITERAL: return generate_LITERAL(node, lst, table);
 		case CONV: return generate_CONV(node, lst, table);
+		case FUNC: return generate_FUNC(node, lst, table);
 		case BLOCK:
 			   for(int i = 0; i<node->children_count; i++)
 				   generate(node->children[i], lst, node->table);
-			return (struct TACArg){0};
+			   if(node->table->total_bytes > node->table->max_bytes) node->table->max_bytes = node->table->total_bytes;
+			   if(node->table->max_bytes > table->max_bytes) table->max_bytes = node->table->max_bytes;
+   
+			   return (struct TACArg){0};
 		default: return (struct TACArg){0};
 	}
 

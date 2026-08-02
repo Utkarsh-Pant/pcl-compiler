@@ -18,6 +18,7 @@
 #include "parser.h"
 #include "semantic_analyser.h"
 #include "tac.h"
+#include "asm_gen.h"
 
 
 /**
@@ -68,10 +69,10 @@ int main(int argc, char** argv){
 			continue;
 		}
 		printf("Parse output:\n");
-
-
 		struct SymbolTable* table = symtable_init(NULL);
-		analyse(treeStream, table);
+
+		if(analyse(treeStream, table) == SYM_ERR){printf("SEMANTIC ERROR\n"); continue;}
+
 		itr = stream_getIterator(treeStream);
 		for(int i = 0; i<itr.n; i++){
 			printAST((struct AST*)itr.arr[i]);
@@ -79,13 +80,14 @@ int main(int argc, char** argv){
 		printf("\n");
 	
 		symtable_print(table);
-	
 		struct TACList* tac_yay = TACList_init();
 		gen_tac(treeStream, tac_yay, table);
 
 		for(int i = 0; i<tac_yay->n; i++){
 			TAC_print(&(tac_yay->arr[i]));
 		}
+
+		gen_asm(tac_yay, table, "p.s");
 	}
 
 	return EXIT_SUCCESS;

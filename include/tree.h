@@ -3,10 +3,13 @@
 
 #include "tokens.h"
 
+
 struct TableRecord;
 struct SymbolTable;
 
 extern int ast_node_count;
+extern struct Stream* global_string_stream;
+extern size_t global_string_stream_count;
 
 struct AST{
 

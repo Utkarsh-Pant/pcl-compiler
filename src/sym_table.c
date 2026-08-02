@@ -29,6 +29,7 @@ struct SymbolTable* symtable_init(struct SymbolTable* parent){
 	if(parent==NULL) new_table->total_bytes = 0;
 	else new_table->total_bytes = parent->total_bytes;
 
+	new_table->max_bytes = new_table->total_bytes;
 
 	return new_table;
 }

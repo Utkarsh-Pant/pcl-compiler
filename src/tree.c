@@ -1,6 +1,8 @@
 #include "tree.h"
 #include "sym_table.h"
 
+struct Stream* global_string_stream = NULL;
+size_t global_string_stream_count = 0;
 int ast_node_count = 0;
 
 static char* dispatchTable[TOKEN_TYPE_COUNT] = {
@@ -49,7 +51,7 @@ void addChild(struct AST* parent, struct AST* child){
 }
 
 struct AST* createAST(struct Token* token){
-
+	if(global_string_stream == NULL) global_string_stream = stream_init();
 
 	struct AST* temp = malloc(sizeof(struct AST));
 	
@@ -75,6 +77,11 @@ struct AST* createAST(struct Token* token){
 		token->type == IDENT
 	)
 		token->value.s = NULL;	
-
+	
+	if(temp->type == LITERAL_STR){
+		stream_append(global_string_stream, temp->value.s);
+		temp->value.s = calloc(sizeof(char), 32);
+		sprintf(temp->value.s, ".LC%ld", global_string_stream_count++);
+	}
 	return temp;
 }

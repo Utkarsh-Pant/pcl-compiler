@@ -5,12 +5,12 @@ INPUT := $(wildcard test/*.pcl)
 test_file:
 	gcc $(FLAGS) $(FILES) -o temp && \
 	./temp $(file) && \
-	rm -rf ./temp
+	rm -f ./temp
 
 dev:
 	gcc $(FLAGS) $(FILES) -o temp && \
 	./temp $(INPUT) && \
-	rm -rf ./temp
-
+	rm -f ./temp
+	gcc -o p.out p.s 
 bin:
 	gcc $(FLAGS) $(FILES) -o temp
