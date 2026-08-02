@@ -17,6 +17,8 @@
 #include "lexer.h"
 #include "parser.h"
 #include "semantic_analyser.h"
+#include "tac.h"
+
 
 /**
  * @brief Checks whether a given filename belongs to our extension (i.e. .pcl)
@@ -77,7 +79,15 @@ int main(int argc, char** argv){
 		printf("\n");
 	
 		symtable_print(table);
+	
+		struct TACList* tac_yay = TACList_init();
+		gen_tac(treeStream, tac_yay, table);
+
+		for(int i = 0; i<tac_yay->n; i++){
+			TAC_print(&(tac_yay->arr[i]));
+		}
 	}
+
 	return EXIT_SUCCESS;
 
 }

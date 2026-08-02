@@ -85,6 +85,14 @@ static int top_down_analyse(struct AST* node, struct SymbolTable* table){
 static int operator_check(struct AST* node, struct SymbolTable* table){
 		
 	if(is_unary(node->type)){ 
+		if( 
+			node->type == OP_PLUS_PLUS || node->type == OP_PLUS_PLUS_POST ||
+			node->type == OP_MINUS_MINUS || node->type == OP_MINUS_MINUS_POST 
+		){
+			if(node->children[0]->type != IDENT) return SYM_ERR;
+		}
+
+	
 		TOKEN_TYPE operand_type = node->children[0]->result_type;
 		node->result_type = unary_map[node->type][operand_type];
 		

@@ -6,6 +6,8 @@
 struct TableRecord;
 struct SymbolTable;
 
+extern int ast_node_count;
+
 struct AST{
 
 	TOKEN_TYPE type;

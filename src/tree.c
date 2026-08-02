@@ -1,6 +1,8 @@
 #include "tree.h"
 #include "sym_table.h"
 
+int ast_node_count = 0;
+
 static char* dispatchTable[TOKEN_TYPE_COUNT] = {
 	#define X(name, desc) [name] = desc,
 	#define UN(a,b)
@@ -47,7 +49,12 @@ void addChild(struct AST* parent, struct AST* child){
 }
 
 struct AST* createAST(struct Token* token){
+
+
 	struct AST* temp = malloc(sizeof(struct AST));
+	
+	ast_node_count++;
+
 	temp->children_count = 0;
 	temp->children = NULL;
 	temp->entry = NULL;
