@@ -1,3 +1,15 @@
+<p align="center"> 
+    <img src="assets/logo.png" alt="PCL Logo" width="150"> 
+</p> 
+
+<h1 align="center">PCL</h1> 
+<p align="center"> 
+    <strong>Personal Computing Language</strong><br> 
+    A custom, from-scratch compiler written entirely in C targeting x86-64 Linux. 
+</p> 
+
+---
+
 # PCL (Personal Computing Language)
 
 PCL is a custom, from-scratch compiler written entirely in C. It translates a C-like procedural language into raw x86-64 Linux assembly (System V AMD64 ABI). 
